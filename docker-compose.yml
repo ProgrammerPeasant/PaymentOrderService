@@ -112,6 +112,16 @@ services:
     networks:
       - microservices-net
 
+  frontend:
+    build:
+      context: ./frontend # Указываем путь к папке с фронтендом
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "3000:80" # Маппим порт 3000 на хосте на порт 80 в контейнере (Nginx)
+    depends_on:
+      - api-gateway # Фронтенд зависит от гейтвея
+
 volumes:
   postgres_data:
 
