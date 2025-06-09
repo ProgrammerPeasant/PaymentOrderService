@@ -5,18 +5,18 @@ services:
     image: postgres:15-alpine
     container_name: microservices-postgres
     ports:
-      - "5432:5432" # Expose DB port to host for local tools if needed
+      - "5432:5432"
     environment:
       POSTGRES_DB: microservices_db
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
     volumes:
-      - postgres_data:/var/lib/postgresql/data # Persist data
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - microservices-net
 
-  zookeeper: # Required by Kafka
-    image: confluentinc/cp-zookeeper:7.5.3 # Use a recent version
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.3
     container_name: zookeeper
     ports:
       - "2181:2181"
@@ -27,11 +27,11 @@ services:
       - microservices-net
 
   kafka:
-    image: confluentinc/cp-kafka:7.5.3 # Use a recent version
+    image: confluentinc/cp-kafka:7.5.3
     container_name: kafka
     ports:
-      - "9092:9092" # For clients within docker network
-      - "29092:29092" # For clients outside docker network (e.g. your host machine for dev)
+      - "9092:9092"
+      - "29092:29092"
     depends_on:
       - zookeeper
     environment:
@@ -42,9 +42,8 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1 # For Confluent images
-      KAFKA_CONFLUENT_BALANCER_TOPIC_REPLICATION_FACTOR: 1 # For Confluent images
-      # For automatic topic creation if needed, though better to create them explicitly or let services create them
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CONFLUENT_BALANCER_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
     networks:
       - microservices-net
@@ -61,7 +60,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/microservices_db
       SPRING_DATASOURCE_USERNAME: user
       SPRING_DATASOURCE_PASSWORD: password
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update # or validate in prod
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SERVER_PORT: 8081
     networks:
@@ -79,7 +78,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/microservices_db
       SPRING_DATASOURCE_USERNAME: user
       SPRING_DATASOURCE_PASSWORD: password
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update # or validate in prod
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SERVER_PORT: 8082
     networks:
@@ -95,32 +94,19 @@ services:
       - payments-service
     environment:
       SERVER_PORT: 8080
-      # Ensure gateway's application.properties points to service names for Docker internal DNS
-      # e.g., spring.cloud.gateway.routes[0].uri=http://orders-service:8081
-      # The properties file for api-gateway needs to be adjusted for Docker:
-      # SPRING_CLOUD_GATEWAY_ROUTES_0_URI: http://orders-service:8081
-      # SPRING_CLOUD_GATEWAY_ROUTES_1_URI: http://payments-service:8082
-      # SPRINGDOC_SWAGGER-UI_URLS_0_URL: /orders-service-docs/v3/api-docs
-      # SPRINGDOC_SWAGGER-UI_URLS_1_URL: /payments-service-docs/v3/api-docs
-      # SPRING_CLOUD_GATEWAY_ROUTES_2_URI: http://orders-service:8081 # for orders api-docs proxy
-      # SPRING_CLOUD_GATEWAY_ROUTES_3_URI: http://payments-service:8082 # for payments api-docs proxy
-      # SPRING_CLOUD_GATEWAY_ROUTES_4_URI: http://orders-service:8081 # for orders swagger-ui resources proxy
-      # SPRING_CLOUD_GATEWAY_ROUTES_5_URI: http://payments-service:8082 # for payments swagger-ui resources proxy
-      # This can be done by creating a docker specific profile in api-gateway, e.g. application-docker.properties
-      # And then activate it with SPRING_PROFILES_ACTIVE=docker
-      SPRING_PROFILES_ACTIVE: docker # We will create application-docker.properties for the gateway
+      SPRING_PROFILES_ACTIVE: docker
     networks:
       - microservices-net
 
   frontend:
     build:
-      context: ./frontend # Указываем путь к папке с фронтендом
+      context: ./frontend
       dockerfile: Dockerfile
     container_name: frontend
     ports:
-      - "3000:80" # Маппим порт 3000 на хосте на порт 80 в контейнере (Nginx)
+      - "3000:80"
     depends_on:
-      - api-gateway # Фронтенд зависит от гейтвея
+      - api-gateway
 
 volumes:
   postgres_data:
