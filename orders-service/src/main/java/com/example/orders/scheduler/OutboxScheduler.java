@@ -18,7 +18,6 @@ import java.util.List;
 public class OutboxScheduler {
     private final OutboxMessageRepository outboxRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
-    // private final TransactionTemplate transactionTemplate; // можно сделать транзакцию для каждого сообщения
 
     @Scheduled(fixedDelay = 10000)
     @Transactional

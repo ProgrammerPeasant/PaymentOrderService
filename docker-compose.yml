@@ -92,6 +92,7 @@ services:
     depends_on:
       - orders-service
       - payments-service
+      - notification-service
     environment:
       SERVER_PORT: 8080
       SPRING_PROFILES_ACTIVE: docker
@@ -107,6 +108,21 @@ services:
       - "3000:80"
     depends_on:
       - api-gateway
+
+  notification-service:
+    build: ./notificationservice
+    container_name: notification-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      - kafka
+    environment:
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SERVER_PORT: 8083
+      KAFKA_TOPIC_ORDERSTATUSUPDATES: order.created
+      KAFKA_CONSUMER_GROUPID: notification-group
+    networks:
+      - microservices-net
 
 volumes:
   postgres_data:
