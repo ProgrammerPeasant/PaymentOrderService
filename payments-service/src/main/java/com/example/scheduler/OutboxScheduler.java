@@ -18,7 +18,7 @@ public class OutboxScheduler {
     private final OutboxMessageRepository outboxRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
 
-    @Scheduled(fixedDelay = 10000)
+    @Scheduled(fixedDelay = 500)
     @Transactional
     public void pollAndPublish() {
         List<OutboxMessage> messages = outboxRepository.findByProcessedAtIsNullOrderByCreatedAtAsc();

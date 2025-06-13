@@ -1,6 +1,6 @@
 package com.example.handler;
 
-import com.example.dto.OrderEventPayload;
+import com.example.dto.OrderNotificationPayload;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,9 +9,7 @@ import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
-// ... другие импорты ...
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,36 +24,6 @@ public class OrderStatusUpdateHandler extends TextWebSocketHandler {
     private final ObjectMapper objectMapper;
 
 
-    public void sendOrderStatusUpdate(String userId, OrderEventPayload eventPayload) {
-        List<WebSocketSession> sessions = userSessions.get(userId);
-        if (sessions != null && !sessions.isEmpty()) {
-            try {
-                Map<String, Object> messageForFrontend = new HashMap<>();
-                messageForFrontend.put("id", eventPayload.orderId());
-                messageForFrontend.put("userId", eventPayload.userId());
-                messageForFrontend.put("totalAmount", eventPayload.amount());
-                messageForFrontend.put("status", "CREATED");
-
-                String messageJson = objectMapper.writeValueAsString(messageForFrontend);
-                TextMessage message = new TextMessage(messageJson);
-
-                log.info("Sending update for order {} to userId {}: {}", eventPayload.orderId(), userId, messageJson);
-                for (WebSocketSession session : sessions) {
-                    if (session.isOpen()) {
-                        try {
-                            session.sendMessage(message);
-                        } catch (IOException e) {
-                            log.error("Failed to send message to session {} for userId {}: {}", session.getId(), userId, e.getMessage());
-                        }
-                    }
-                }
-            } catch (IOException e) {
-                log.error("Error serializing message for frontend for userId {}: {}", userId, e.getMessage(), e);
-            }
-        } else {
-            log.warn("No active WebSocket sessions found for userId: {} to send order update.", userId);
-        }
-    }
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         String query = session.getUri().getQuery();
@@ -119,6 +87,34 @@ public class OrderStatusUpdateHandler extends TextWebSocketHandler {
                     userSessions.remove(userId);
                 }
             }
+        }
+    }
+
+    public void sendOrderStatusUpdate(String userId, OrderNotificationPayload payload) {
+        List<WebSocketSession> sessions = userSessions.get(userId);
+        if (sessions != null && !sessions.isEmpty()) {
+            try {
+                String messageJson = objectMapper.writeValueAsString(payload);
+                TextMessage message = new TextMessage(messageJson);
+
+                log.info("Sending update for order {} (status: {}) to userId {}: {}",
+                        payload.id(), payload.status(), userId, messageJson);
+
+                for (WebSocketSession session : sessions) {
+                    if (session.isOpen()) {
+                        try {
+                            session.sendMessage(message);
+                        } catch (IOException e) {
+                            log.error("Failed to send message to session {} for userId {}: {}",
+                                    session.getId(), userId, e.getMessage());
+                        }
+                    }
+                }
+            } catch (IOException e) {
+                log.error("Error serializing OrderNotificationPayload for userId {}: {}", userId, e.getMessage(), e);
+            }
+        } else {
+            log.warn("No active WebSocket sessions found for userId: {} to send order update.", userId);
         }
     }
 }

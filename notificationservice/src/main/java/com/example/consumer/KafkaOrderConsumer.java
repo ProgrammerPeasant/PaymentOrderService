@@ -1,6 +1,6 @@
 package com.example.consumer;
 
-import com.example.dto.OrderEventPayload;
+import com.example.dto.OrderNotificationPayload;
 import com.example.handler.OrderStatusUpdateHandler;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,24 +17,23 @@ public class KafkaOrderConsumer {
     private final OrderStatusUpdateHandler orderStatusUpdateHandler;
     private final ObjectMapper objectMapper;
 
-    @KafkaListener(topics = "${kafka.topic.orderStatusUpdates:order-status-updates}", // Убедитесь, что топик правильный
+    @KafkaListener(topics = "${kafka.topic.orderStatusUpdates:order-status-updates}",
             groupId = "${kafka.consumer.groupId:notification-group}")
     public void listenOrderUpdates(String messagePayload) {
         log.info("Received message from Kafka: {}", messagePayload);
         try {
-            OrderEventPayload eventPayload = objectMapper.readValue(messagePayload, OrderEventPayload.class); // ИЗМЕНЕНО
-            log.info("Deserialized to OrderEventPayload: {}", eventPayload);
+            OrderNotificationPayload notificationPayload = objectMapper.readValue(messagePayload, OrderNotificationPayload.class); // Десериализуем в новый DTO
+            log.info("Deserialized to OrderNotificationPayload: {}", notificationPayload);
 
-            if (eventPayload.userId() == null || eventPayload.userId().trim().isEmpty()) {
+            if (notificationPayload.userId() == null || notificationPayload.userId().trim().isEmpty()) {
                 log.warn("Received order update without userId, cannot send WebSocket notification. Payload: {}", messagePayload);
                 return;
             }
 
-            // ПЕРЕДАЕМ НОВЫЙ DTO В ОБРАБОТЧИК
-            orderStatusUpdateHandler.sendOrderStatusUpdate(eventPayload.userId(), eventPayload); // ИЗМЕНЕНО
+            orderStatusUpdateHandler.sendOrderStatusUpdate(notificationPayload.userId(), notificationPayload);
 
         } catch (JsonProcessingException e) {
-            log.error("Error deserializing Kafka message to OrderEventPayload: {}", messagePayload, e); // ИЗМЕНЕНО
+            log.error("Error deserializing Kafka message to OrderNotificationPayload: {}", messagePayload, e);
         } catch (Exception e) {
             log.error("Error processing Kafka message: {}", messagePayload, e);
         }

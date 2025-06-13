@@ -65,15 +65,18 @@ public class OrderService {
             OutboxMessage outboxMessage = new OutboxMessage(
                     "Order",
                     savedOrder.getId(),
-                    orderCreatedTopic,
+                    this.orderCreatedTopic,
                     savedOrder.getId(),
                     payloadJson
             );
             outboxMessageRepository.save(outboxMessage);
+            log.info("OrderCreatedEvent for order {} placed in outbox for topic '{}'.", savedOrder.getId(), this.orderCreatedTopic);
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize OrderCreatedEvent for order {}", savedOrder.getId(), e);
             throw new RuntimeException("Serialization error for order created event", e);
         }
+
+        publishOrderStatusUpdate(savedOrder);
 
         log.info("Order {} created for user {}. Event placed in outbox.", savedOrder.getId(), userId);
         return mapToOrderResponse(savedOrder);
@@ -115,25 +118,65 @@ public class OrderService {
                     order.getId(), order.getStatus(), event.status());
         }
 
-
         switch (event.status()) {
             case SUCCESS:
-                order.setStatus(OrderStatus.PAID);
-                log.info("Order {} marked as PAID.", order.getId());
+                if (order.getStatus() != OrderStatus.PAID) {
+                    order.setStatus(OrderStatus.PAID);
+                    log.info("Order {} marked as PAID.", order.getId());
+                }
                 break;
             case FAILURE_INSUFFICIENT_FUNDS:
             case FAILURE_ACCOUNT_NOT_FOUND:
             case FAILURE_ORDER_ALREADY_PROCESSED:
             case FAILURE_OTHER:
-                order.setStatus(OrderStatus.PAYMENT_FAILED);
-                log.warn("Order {} payment failed. Reason: {}. Marked as PAYMENT_FAILED.", order.getId(), event.reason());
+                if (order.getStatus() != OrderStatus.PAYMENT_FAILED) {
+                    order.setStatus(OrderStatus.PAYMENT_FAILED);
+                    log.warn("Order {} payment failed. Reason: {}. Marked as PAYMENT_FAILED.", order.getId(), event.reason());
+                }
                 break;
             default:
                 log.warn("Unhandled payment status {} for order {}.", event.status(), order.getId());
                 return;
         }
+
         order.setUpdatedAt(LocalDateTime.now());
-        orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
+
+        publishOrderStatusUpdate(savedOrder);
+    }
+
+    private void publishOrderStatusUpdate(Order order) {
+        OrderResponse orderResponse = mapOrderToOrderResponse(order);
+
+        try {
+            String payloadJson = objectMapper.writeValueAsString(orderResponse);
+
+            OutboxMessage outboxMessage = new OutboxMessage();
+            outboxMessage.setAggregateType("Order"); // Тип сущности
+            outboxMessage.setAggregateId(order.getId()); // ID сущности
+            outboxMessage.setTopic("order-status-updates");
+            outboxMessage.setMessageKey(order.getId());
+            outboxMessage.setPayload(payloadJson);
+            outboxMessage.setCreatedAt(LocalDateTime.now());
+
+            outboxMessageRepository.save(outboxMessage);
+            log.info("Outbox message created for order {} status update (status: {}).", order.getId(), order.getStatus());
+
+        } catch (JsonProcessingException e) {
+            log.error("Failed to serialize OrderResponse for outbox, orderId: {}: {}", order.getId(), e.getMessage(), e);
+        }
+    }
+
+    private OrderResponse mapOrderToOrderResponse(Order order) {
+        return new OrderResponse(
+                order.getId(),
+                order.getUserId(),
+                null,
+                order.getTotalAmount(),
+                order.getStatus(),
+                order.getCreatedAt(),
+                order.getUpdatedAt()
+        );
     }
 
 
