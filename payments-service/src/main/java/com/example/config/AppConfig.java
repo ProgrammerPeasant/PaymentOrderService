@@ -10,7 +10,7 @@ public class AppConfig {
     @Bean
     public ObjectMapper objectMapper() {
         ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule()); // For Java 8 date/time types
+        objectMapper.registerModule(new JavaTimeModule());
         return objectMapper;
     }
 }

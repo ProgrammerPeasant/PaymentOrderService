@@ -25,7 +25,6 @@ subprojects {
     dependencies {
         implementation("org.projectlombok:lombok")
         annotationProcessor("org.projectlombok:lombok")
-        // Springdoc OpenAPI for Swagger
 
         testImplementation("org.springframework.boot:spring-boot-starter-test")
     }

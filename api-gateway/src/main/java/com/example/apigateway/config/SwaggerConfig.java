@@ -10,8 +10,6 @@ import org.springframework.context.annotation.Lazy;
 import java.util.ArrayList;
 import java.util.List;
 
-// вообще это крутой способ для конфигурации сваггера и обнаружения групп, но у меня это щас не используется, потому что
-// локально удобно просто через property
 @Configuration
 public class SwaggerConfig {
 
@@ -24,7 +22,6 @@ public class SwaggerConfig {
             definitions.stream()
                     .filter(routeDefinition -> routeDefinition.getId().matches(".*-service-route"))
                     .forEach(routeDefinition -> {
-                        String name = routeDefinition.getId().replace("-service-route", "");
                     });
         }
         return groups;

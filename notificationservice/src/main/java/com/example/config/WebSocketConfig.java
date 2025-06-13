@@ -19,6 +19,6 @@ public class WebSocketConfig implements WebSocketConfigurer {
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(orderStatusUpdateHandler, "/ws/order-status")
-                .setAllowedOrigins("*"); // Для разработки разрешаем все источники, в проде настройте конкретнее
+                .setAllowedOrigins("*");
     }
 }

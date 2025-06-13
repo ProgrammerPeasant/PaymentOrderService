@@ -5,7 +5,7 @@ public enum OrderStatus {
     PAYMENT_PENDING,
     PAID,
     PAYMENT_FAILED,
-    SHIPPED,        // эти на всякий случай добавил но нне использовал пока что
-    DELIVERED,
-    CANCELLED
+    FAILURE_INSUFFICIENT_FUNDS,
+    FAILURE_ACCOUNT_NOT_FOUND,
+    FAILURE_ORDER_ALREADY_PROCESSED
 }
