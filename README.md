@@ -11,6 +11,7 @@
 Приложение состоит из 5 микросервисов (api gateway, notification service, payments service, orders service), также в проекте есть кафка для реализации паттерн аутбокс и вебсокета с уведомлениями.
 
 Сваггер-интерфейс доступен по ссылке http://localhost:8080/webjars/swagger-ui/index.html
+Фронтенд по умолчанию на localhost:3000
 ## Особенности
 
 - **Язык:** Java 21
